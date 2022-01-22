@@ -13,27 +13,41 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.codengy.bingo90.entities.Ticket;
+import com.codengy.bingo90.exceptions.TicketException;
 import com.codengy.bingo90.helpers.TicketHelper;
 
-public class TicketService {
+public final class TicketService {
+	
+	private final static TicketService INSTANCE = new TicketService();
+	
+	private TicketService() { }
+	
+	public static TicketService getInstance() {
+		return INSTANCE;
+	}
 
 	static final Logger logger = LoggerFactory.getLogger(TicketService.class);
 
-	StripeService stripeService = new StripeService();
-	TicketHelper helper = new TicketHelper();
+	private StripeService stripeService = StripeService.getInstance();
+	private TicketHelper helper = TicketHelper.getInstance();
 	
-	public List<Ticket> generateTickets(int numOfTickets, int numOfStripes) {
+	public List<Ticket> generateTickets(int numOfTickets, int numOfStripes) throws TicketException {		
 		List<Ticket> tickets = new LinkedList<>();
 		
-		IntStream.range(0, numOfTickets).forEach(ticketIndex -> {
+		for (int ticketIndex = 0; ticketIndex < numOfTickets; ticketIndex++) {
 			Ticket ticket = generateTicket(ticketIndex + 1, numOfStripes);
 			tickets.add(ticket);
-		});
+		}
 		
 		return tickets;
 	}
 
-	public Ticket generateTicket(int ticketId, int numOfStripes) {
+	public Ticket generateTicket(int ticketId, int numOfStripes) throws TicketException {
+		if (numOfStripes < 1 || numOfStripes > 6) {
+			throw new TicketException("Number of stripes can be between 1 and 6");
+		}
+		
+		
 		Map<Integer, List<Integer>> ticketNumbers = generateTicketNumbers();
 		List<Integer[]> stripes = generateColumnsNumbersUsage(ticketId, numOfStripes);
 		List<Integer[]> masks = generateMask(stripes);
@@ -49,7 +63,7 @@ public class TicketService {
 		return new Ticket(ticketId, populatedTicket);
 	}
 	
-	public List<Integer[]> generateMask(List<Integer[]> ticket) {
+	List<Integer[]> generateMask(List<Integer[]> ticket) {
 		List<Integer[]> masks = new LinkedList<> ();
 		
 		IntStream.range(0, ticket.size()).forEach(ind -> {
@@ -61,7 +75,7 @@ public class TicketService {
 		return masks;
 	}
 	
-	public List<Integer[]> generateColumnsNumbersUsage(int ticketNumber, int numOfStripes) {
+	List<Integer[]> generateColumnsNumbersUsage(int ticketNumber, int numOfStripes) {
 		List<Integer[]> stripes = new LinkedList<>();
 		Integer[] colSums = new Integer[Ticket.STRIPE_COL_COUNT];
 		Arrays.setAll(colSums, v -> 0);
@@ -73,10 +87,8 @@ public class TicketService {
 		return stripes;
 	}
 
-	private Map<Integer, List<Integer>> generateTicketNumbers() {
-		Map<Integer, List<Integer>> ticketNumbers;
-
-		ticketNumbers = new HashMap<>();
+	Map<Integer, List<Integer>> generateTicketNumbers() {
+		Map<Integer, List<Integer>> ticketNumbers = new HashMap<>();
 
 		int[] firstStripeColumnNumbers = IntStream.rangeClosed(1, 9).toArray();
 		ticketNumbers.put(1, helper.arrayToListAndShuffle(firstStripeColumnNumbers));
@@ -95,7 +107,7 @@ public class TicketService {
 		return ticketNumbers;
 	}
 
-	private List<List<Integer>> pickNumbers(Map<Integer, List<Integer>> ticketNumbers,
+	List<List<Integer>> pickNumbers(Map<Integer, List<Integer>> ticketNumbers,
 			List<Integer[]> columnsNumbersUsage) {
 		List<List<Integer>> pickedNumbers = new LinkedList<>();
 
@@ -120,7 +132,7 @@ public class TicketService {
 		return pickedNumbers;
 	}
 
-	private List<List<Integer>> populateTicket(List<Integer[]> ticketMask, List<List<Integer>> ticketNumbers) {
+	List<List<Integer>> populateTicket(List<Integer[]> ticketMask, List<List<Integer>> ticketNumbers) {
 		List<List<Integer>> populatedTicket = new ArrayList<>(ticketNumbers.size());
 
 		IntStream.range(0, ticketNumbers.size()).forEach(stripeIndex -> {

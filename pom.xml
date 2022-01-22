@@ -42,7 +42,7 @@
 				<configuration>
 					<archive>
 						<manifest>
-							<mainClass>com.codengy.bingo90.MatrixSolution</mainClass>
+							<mainClass>com.codengy.bingo90.Bingo90App</mainClass>
 						</manifest>
 					</archive>
 					<descriptorRefs>

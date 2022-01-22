@@ -11,6 +11,14 @@ import com.codengy.bingo90.entities.Ticket;
 
 public class TicketHelper {
 	
+	private final static TicketHelper INSTANCE = new TicketHelper();
+	
+	private TicketHelper() { }
+	
+	public static TicketHelper getInstance() {
+		return INSTANCE;
+	}
+	
 	public List<Integer> arrayToListAndShuffle(int[] source) {
 		List<Integer> numbers = Arrays.stream(source).boxed().collect(Collectors.toCollection(LinkedList::new));
 		Collections.shuffle(numbers);

@@ -14,11 +14,19 @@ import org.slf4j.LoggerFactory;
 import com.codengy.bingo90.entities.Ticket;
 import com.codengy.bingo90.helpers.TicketHelper;
 
-public class StripeService {
+public final class StripeService {
+	
+	private final static StripeService INSTANCE = new StripeService();
+	
+	private StripeService() { }
+	
+	public static StripeService getInstance() {
+		return INSTANCE;
+	}
 	
 	static final Logger logger = LoggerFactory.getLogger(StripeService.class);
 	
-	TicketHelper helper = new TicketHelper();
+	private TicketHelper helper = TicketHelper.getInstance();
 	
 	public static final double PROBABILITY = 0.5d;
 
