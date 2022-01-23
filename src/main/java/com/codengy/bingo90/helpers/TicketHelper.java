@@ -26,6 +26,9 @@ public class TicketHelper {
 	}
 	
 	public int getColumnTotalNumbers(int column) {
+		if (column < 0 || column > 8) {
+			throw new RuntimeException("[Should NEVER happened] Column index has to be between 0 and 8");
+		}
 		switch (column) {
 			case 0: return 9;
 			case 8: return 11;

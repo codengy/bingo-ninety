@@ -31,7 +31,11 @@ public final class TicketService {
 	private StripeService stripeService = StripeService.getInstance();
 	private TicketHelper helper = TicketHelper.getInstance();
 	
-	public List<Ticket> generateTickets(int numOfTickets, int numOfStripes) throws TicketException {		
+	public List<Ticket> generateTickets(int numOfTickets, int numOfStripes) throws TicketException {	
+		if (numOfTickets < 1) {
+			throw new TicketException("Number of tickets can be 1 and greater");
+		}	
+		
 		List<Ticket> tickets = new LinkedList<>();
 		
 		for (int ticketIndex = 0; ticketIndex < numOfTickets; ticketIndex++) {
@@ -45,8 +49,7 @@ public final class TicketService {
 	public Ticket generateTicket(int ticketId, int numOfStripes) throws TicketException {
 		if (numOfStripes < 1 || numOfStripes > 6) {
 			throw new TicketException("Number of stripes can be between 1 and 6");
-		}
-		
+		}		
 		
 		Map<Integer, List<Integer>> ticketNumbers = generateTicketNumbers();
 		List<Integer[]> stripes = generateColumnsNumbersUsage(ticketId, numOfStripes);
