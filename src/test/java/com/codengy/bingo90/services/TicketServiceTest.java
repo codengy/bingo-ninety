@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -53,9 +54,12 @@ public class TicketServiceTest {
 		tickets.get(0).getStripes().forEach(stripeNumbers -> ticketNumbers.addAll(stripeNumbers));
 		
 		List<Integer> uniqueNumbers = ticketNumbers.stream().distinct().collect(Collectors.toList());
+		Collections.sort(uniqueNumbers);
 		
 		// 0 represents an empty cell and with other 90 numbers there is 91 unique number from 0 to 90
-		assertEquals(91, uniqueNumbers.size(), "Ticket with 6 stripes has to have all unique numbers between 0 and 90");		
+		assertEquals(91, uniqueNumbers.size(), "Ticket with 6 stripes has to have all unique numbers between 0 and 90");
+		assertEquals(0, uniqueNumbers.get(0), "First number in unique sorted numbers list has to be 0");
+		assertEquals(90, uniqueNumbers.get(uniqueNumbers.size() - 1), "Last number in unique list has to be 90");
 	}
 
 	@Test

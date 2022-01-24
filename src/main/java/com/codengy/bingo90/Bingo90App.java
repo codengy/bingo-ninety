@@ -31,7 +31,7 @@ public class Bingo90App {
 		if (params.isPrintTicket()) {
 			tickets.forEach(ticket -> System.out.println(ticket));			
 		}
-		System.out.println(String.format("Elapsed Time: %sms", (endTime - startTime)));
+		System.out.println(String.format("[Bingo 90] Elapsed Time: %sms", (endTime - startTime)));
 	}
 	
 	static void printHelp() {
@@ -63,6 +63,10 @@ public class Bingo90App {
 			} else if (args[ind].equals("-p")) {
 				printTicket = true;
 				ind++;
+				
+			} else {
+				System.out.println("Error: Wrong parameter " + args[ind]);
+				System.exit(0);
 			}
 		}
 		
