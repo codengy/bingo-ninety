@@ -29,7 +29,6 @@ public final class StripeService {
 	private TicketHelper helper = TicketHelper.getInstance();
 
 	public Integer[] generateColumnsNumbersUsage(int ticketNumber, int stripeNumber, Integer[] columnSums) {
-		int remainingStripes = Ticket.MAX_STRIPES - stripeNumber;
 		int usedNumbers = 9;
 		IntStream.range(0, columnSums.length).forEach(ind -> {
 			columnSums[ind]++;
@@ -39,10 +38,9 @@ public final class StripeService {
 		// because every column has to have at least 1 element
 		// and remaining 6 elements are chosen randomly
 		Integer[] stripeColumnNumbersUsage = generateRow(usedNumbers);
-		Random random = new Random();
 
 		if (stripeNumber == 6) {
-			// For last stripe just copy remaining numbers
+			// For the last stripe just copy remaining numbers
 			IntStream.range(0, Ticket.STRIPE_COL_COUNT).forEach(ind -> {
 				int remainingNumbers = helper.getColumnTotalNumbers(ind) - columnSums[ind];
 				stripeColumnNumbersUsage[ind] += remainingNumbers;
@@ -50,43 +48,51 @@ public final class StripeService {
 			});
 
 		} else {
-			while (usedNumbers < Ticket.STRIPE_MAX_NUMBERS) {
-				double randomNumber = random.nextDouble();
-				int selectedColumn = random.nextInt(Ticket.STRIPE_COL_COUNT);
-
-				// check critical column
-				boolean correctProbability = false;
-
-				if (stripeNumber > 3) {
-					// For last 3 stripes there is need for probability correction because more numbers can remain 
-					// and stripes won't be populated regularly
-					for (int i = columnSums.length - 1; i >= 0 ; i--) {
-						if (helper.getColumnTotalNumbers(i) - columnSums[i] - 1 >= (Ticket.MAX_STRIPES - stripeNumber) * 3) {
-							selectedColumn = i;
-							correctProbability = true;
-							break;
-						}
-					}
-				}
-
-				int remainingNumbers = helper.getColumnTotalNumbers(selectedColumn) - columnSums[selectedColumn];
-				double probability = !correctProbability
-						? (double) remainingNumbers / (double) helper.getColumnTotalNumbers(selectedColumn)
-						: 1;
-
-				if (remainingNumbers <= remainingStripes) {
-					probability = 0;
-				}
-
-				if (randomNumber < probability && stripeColumnNumbersUsage[selectedColumn] < 3 && columnSums[selectedColumn] < 10) {
-					stripeColumnNumbersUsage[selectedColumn]++;
-					usedNumbers++;
-					columnSums[selectedColumn]++;
-				}
-			}
+			populateFirstFiveStripes(stripeNumber, columnSums, stripeColumnNumbersUsage);
 		}
 
 		return stripeColumnNumbersUsage;
+	}
+	
+	void populateFirstFiveStripes(int stripeNumber, Integer[] columnSums, Integer[] stripeColumnNumbersUsage) {
+		Random random = new Random();
+		int remainingStripes = Ticket.MAX_STRIPES - stripeNumber;
+		int usedNumbers = 9;
+		
+		while (usedNumbers < Ticket.STRIPE_MAX_NUMBERS) {
+			double randomNumber = random.nextDouble();
+			int selectedColumn = random.nextInt(Ticket.STRIPE_COL_COUNT);
+
+			// check critical column
+			boolean correctProbability = false;
+
+			if (stripeNumber > 3) {
+				// For last 3 stripes there is need for probability correction because more numbers can remain 
+				// and stripes won't be populated regularly
+				for (int i = columnSums.length - 1; i >= 0 ; i--) {
+					if (helper.getColumnTotalNumbers(i) - columnSums[i] - 1 >= (Ticket.MAX_STRIPES - stripeNumber) * 3) {
+						selectedColumn = i;
+						correctProbability = true;
+						break;
+					}
+				}
+			}
+
+			int remainingNumbers = helper.getColumnTotalNumbers(selectedColumn) - columnSums[selectedColumn];
+			double probability = !correctProbability
+					? (double) remainingNumbers / (double) helper.getColumnTotalNumbers(selectedColumn)
+					: 1;
+
+			if (remainingNumbers <= remainingStripes) {
+				probability = 0;
+			}
+
+			if (randomNumber < probability && stripeColumnNumbersUsage[selectedColumn] < 3 && columnSums[selectedColumn] < 10) {
+				stripeColumnNumbersUsage[selectedColumn]++;
+				usedNumbers++;
+				columnSums[selectedColumn]++;
+			}
+		}
 	}
 
 	Integer[] generateRow(int n) {
@@ -101,8 +107,6 @@ public final class StripeService {
 		Integer[] stripeMask = new Integer[ Ticket.STRIPE_COL_COUNT * Ticket.STRIPE_ROW_COUNT ];
 		Arrays.setAll(stripeMask, v -> 0);
 
-		Random random = new Random();
-
 		Map<Integer, List<Integer>> columnIndexes = new HashMap<>();
 		IntStream.range(0, Ticket.STRIPE_ROW_COUNT).forEach(ind -> columnIndexes.put(ind + 1, new LinkedList<>()));
 
@@ -112,6 +116,18 @@ public final class StripeService {
 		}
 
 		// populate all three positions of the stripe column
+		populateColumnMaskWithThreeNumbers(columnIndexes, rowNumCount, stripeMask);
+
+		// populate two positions of the stripe column mask
+		populateColumnMaskWithTwoNumbers(columnIndexes, rowNumCount, stripeMask);
+		
+		// populate one positions of the stripe column mask
+		populateColumnMaskWithOneNumber(columnIndexes, rowNumCount, stripeMask);
+		
+		return stripeMask;
+	}
+	
+	void populateColumnMaskWithThreeNumbers(Map<Integer, List<Integer>> columnIndexes, int[] rowNumCount, Integer[] stripeMask) {
 		for (int i = 0; i < columnIndexes.get(3).size(); i++) {
 			int columnIndex = columnIndexes.get(3).get(i);
 			
@@ -120,8 +136,11 @@ public final class StripeService {
 				rowNumCount[index]++;
 			});
 		}
-
-		// populate two positions of the stripe column
+	}
+	
+	void populateColumnMaskWithTwoNumbers(Map<Integer, List<Integer>> columnIndexes, int[] rowNumCount, Integer[] stripeMask) {
+		Random random = new Random();
+		
 		int colsWithTwoNumbersCount = columnIndexes.get(2).size();
 		for (int i = 0; i < colsWithTwoNumbersCount; i++) {
 			int ind = columnIndexes.get(2).get(i);
@@ -159,7 +178,11 @@ public final class StripeService {
 				rowNumCount[2]++;
 			}
 		}
-
+	}
+	
+	void populateColumnMaskWithOneNumber(Map<Integer, List<Integer>> columnIndexes, int[] rowNumCount, Integer[] stripeMask) {
+		Random random = new Random();
+		
 		// populate stripe with 1 number
 		for (int i = 0; i < columnIndexes.get(1).size(); i++) {
 			int columnIndex = columnIndexes.get(1).get(i);
@@ -177,8 +200,6 @@ public final class StripeService {
 			stripeMask[columnIndex + index * 9] = 1;
 			rowNumCount[index]++;
 		}
-		
-		return stripeMask;
 	}
 	
 	public List<Integer> populateStripe(Integer[] stripeMask, List<Integer> stripeNumbers) {

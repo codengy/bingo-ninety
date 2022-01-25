@@ -31,8 +31,8 @@ The algorithm works in 5 phases:
         [ 2, 1, 2, 1, 2, 1, 2, 1, 3 ]
 * phase 3: generates mask for each stripe of ticket
     - an example of mask for one stripe  
-        [ 0, 1, 1, 0, 1, 0, 1, 0, 1 ]
-        [ 1, 0, 1, 1, 0, 0, 0, 1, 1 ]
+        [ 0, 1, 1, 0, 1, 0, 1, 0, 1 ]  
+        [ 1, 0, 1, 1, 0, 0, 0, 1, 1 ]  
         [ 1, 0, 0, 0, 1, 1, 1, 0, 1 ]
 * phase 4: populates stripe lists (ticket) with numbers using lists from *shuffled numbers (phase 1)* and *numbers usage (phase 2)*
     - an example of numbers of stripe  
