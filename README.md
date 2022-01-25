@@ -44,8 +44,8 @@ The algorithm works in 5 phases:
         [ 0, 0, 26, 35, 0, 56, 0, 79, 85 ]  
 
 # Prerequisites
-* JVM 8
-* Maven
+* JDK 8
+* Maven 3
 # How to run
 From the project root run command:
 ```

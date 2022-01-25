@@ -27,24 +27,26 @@ public final class StripeService {
 	static final Logger logger = LoggerFactory.getLogger(StripeService.class);
 	
 	private TicketHelper helper = TicketHelper.getInstance();
-	
-	public static final double PROBABILITY = 0.5d;
 
 	public Integer[] generateColumnsNumbersUsage(int ticketNumber, int stripeNumber, Integer[] columnSums) {
-		int leftStripes = Ticket.MAX_STRIPES - stripeNumber;
+		int remainingStripes = Ticket.MAX_STRIPES - stripeNumber;
 		int usedNumbers = 9;
 		IntStream.range(0, columnSums.length).forEach(ind -> {
 			columnSums[ind]++;
 		});
 
-		Integer[] stripeMask = generateRow(usedNumbers);
+		// Column numbers usage is 1 for every column of each stripe
+		// because every column has to have at least 1 element
+		// and remaining 6 elements are chosen randomly
+		Integer[] stripeColumnNumbersUsage = generateRow(usedNumbers);
 		Random random = new Random();
 
 		if (stripeNumber == 6) {
+			// For last stripe just copy remaining numbers
 			IntStream.range(0, Ticket.STRIPE_COL_COUNT).forEach(ind -> {
-				int leftNumbers = helper.getColumnTotalNumbers(ind) - columnSums[ind];
-				stripeMask[ind] += leftNumbers;
-				columnSums[ind] += leftNumbers;
+				int remainingNumbers = helper.getColumnTotalNumbers(ind) - columnSums[ind];
+				stripeColumnNumbersUsage[ind] += remainingNumbers;
+				columnSums[ind] += remainingNumbers;
 			});
 
 		} else {
@@ -56,6 +58,8 @@ public final class StripeService {
 				boolean correctProbability = false;
 
 				if (stripeNumber > 3) {
+					// For last 3 stripes there is need for probability correction because more numbers can remain 
+					// and stripes won't be populated regularly
 					for (int i = columnSums.length - 1; i >= 0 ; i--) {
 						if (helper.getColumnTotalNumbers(i) - columnSums[i] - 1 >= (Ticket.MAX_STRIPES - stripeNumber) * 3) {
 							selectedColumn = i;
@@ -65,24 +69,24 @@ public final class StripeService {
 					}
 				}
 
-				int leftNumbers = helper.getColumnTotalNumbers(selectedColumn) - columnSums[selectedColumn];
+				int remainingNumbers = helper.getColumnTotalNumbers(selectedColumn) - columnSums[selectedColumn];
 				double probability = !correctProbability
-						? (double) leftNumbers / (double) helper.getColumnTotalNumbers(selectedColumn)
+						? (double) remainingNumbers / (double) helper.getColumnTotalNumbers(selectedColumn)
 						: 1;
 
-				if (leftNumbers <= leftStripes) {
+				if (remainingNumbers <= remainingStripes) {
 					probability = 0;
 				}
 
-				if (randomNumber < probability && stripeMask[selectedColumn] < 3 && columnSums[selectedColumn] < 10) {
-					stripeMask[selectedColumn]++;
+				if (randomNumber < probability && stripeColumnNumbersUsage[selectedColumn] < 3 && columnSums[selectedColumn] < 10) {
+					stripeColumnNumbersUsage[selectedColumn]++;
 					usedNumbers++;
 					columnSums[selectedColumn]++;
 				}
 			}
 		}
 
-		return stripeMask;
+		return stripeColumnNumbersUsage;
 	}
 
 	Integer[] generateRow(int n) {
@@ -107,7 +111,7 @@ public final class StripeService {
 			columnIndexes.get(colNumCount).add(i);
 		}
 
-		// populate all three positions
+		// populate all three positions of the stripe column
 		for (int i = 0; i < columnIndexes.get(3).size(); i++) {
 			int columnIndex = columnIndexes.get(3).get(i);
 			
@@ -117,12 +121,15 @@ public final class StripeService {
 			});
 		}
 
+		// populate two positions of the stripe column
 		int colsWithTwoNumbersCount = columnIndexes.get(2).size();
 		for (int i = 0; i < colsWithTwoNumbersCount; i++) {
 			int ind = columnIndexes.get(2).get(i);
 			double probability = random.nextDouble();
 			int unsetCount = colsWithTwoNumbersCount - i;
 
+			// For stripes with 6 columns of 2 numbers probability has to be manually corrected
+			// because in some cases there won't be place left over for columns with 1 number
 			if (colsWithTwoNumbersCount == 6 && unsetCount % 2 == 0) {
 				probability = i * .25d;
 			}
